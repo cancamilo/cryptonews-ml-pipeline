@@ -96,49 +96,22 @@ class BaseDocument(BaseModel):
             )
 
         return cls.Settings.name
-
-
-class UserDocument(BaseDocument):
-    first_name: str
-    last_name: str
-
-    class Settings:
-        name = "users"
-
-
-class RepositoryDocument(BaseDocument):
-    name: str
-    link: str
-    content: dict
-    owner_id: str = Field(alias="owner_id")
-
-    class Settings:
-        name = "repositories"
-
-
-class PostDocument(BaseDocument):
-    platform: str
-    content: dict
-    author_id: str = Field(alias="author_id")
-
-    class Settings:
-        name = "posts"
-
+    
+    @classmethod
+    def close_connection(cls):
+        connection.close()
+    
+    @classmethod
+    def dump_json(cls, articles) -> None:
+        with open("articles.txt", "w") as file:
+            for article in articles:
+                file.write(str(article.model_dump()) + "\n")
 
 class ArticleDocument(BaseDocument):
-    platform: str
-    link: str
-    content: dict
-    author_id: str = Field(alias="author_id")
-
-    class Settings:
-        name = "articles"
-
-class CoinTelegraphArticle(BaseDocument):
+    source: str
     title: str
     content: str
     summary: Optional[str] = None
-    date: Optional[str] = None
     
     class Settings:
         name = "articles"

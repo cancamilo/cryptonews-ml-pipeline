@@ -14,7 +14,7 @@ local-deploy: # Deploy lambda crawler custom docker image on local.
 	docker run \
 		-p 9000:8080 \
 		--env-file .env.docker \
-		--network text_etl_fetcher_local \
+		--network text-fetch-etl_shared_network \
 		--platform linux/amd64 \
 		crawler:latest
 

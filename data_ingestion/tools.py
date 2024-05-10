@@ -9,7 +9,7 @@ from newsapi import NewsApiClient
 from newsdataapi import NewsDataApiClient
 from pydantic import ValidationError
 
-from src.models.article_models import NewsAPIModel, NewsDataIOModel, TelegramMessage
+from data_ingestion.models.article_models import NewsAPIModel, NewsDataIOModel, TelegramMessage
 from settings import settings
 
 logging.basicConfig(level=logging.INFO)

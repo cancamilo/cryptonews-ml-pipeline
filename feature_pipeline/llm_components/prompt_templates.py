@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
-
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.prompts import PromptTemplate, BasePromptTemplate, ChatPromptTemplate
-from pydantic import BaseModel
 
 
 class BaseTemplate(ABC, BaseModel):
@@ -11,7 +9,7 @@ class BaseTemplate(ABC, BaseModel):
         pass
 
 
-class QueryExpansionTemplate(BasePromptTemplate):
+class QueryExpansionTemplate(BaseTemplate):
     prompt: str = """You are an AI language model assistant. Your task is to generate {n_expansions}
     different versions of the given user question to retrieve relevant documents from a vector
     database. By generating multiple perspectives on the user question, your goal is to help
@@ -41,9 +39,9 @@ class QueryMetadata(BaseModel):
     date: str = Field(description="date from the text in the format yyyy-mm-dd")
 
     
-class QueryMetaTemplate(BasePromptTemplate):
+class QueryMetaTemplate(BaseTemplate):
 
-    def create_template(self) -> PromptTemplate:
+    def create_template(self) -> BasePromptTemplate:
         return ChatPromptTemplate.from_messages([
             ("system", "Today´s date is {current_date}."),
             ("human", "{user_query}"),
@@ -52,7 +50,7 @@ class QueryMetaTemplate(BasePromptTemplate):
 
 
 #TODO: remove this class after cleaning
-class SelfQueryTemplate(BasePromptTemplate):
+class SelfQueryTemplate(BaseTemplate):
     prompt: str = """You are an AI language model assistant. Your task is to extract information from a user question related to blockchain and cryptocurrencies.
     The required information that needs to be extracted is the project name and the date relative to {current_date}. 
     User question: {question}"""
@@ -61,7 +59,7 @@ class SelfQueryTemplate(BasePromptTemplate):
         return PromptTemplate(template=self.prompt, input_variables=["question"])
 
 
-class RerankingTemplate(BasePromptTemplate):
+class RerankingTemplate(BaseTemplate):
     prompt: str = """You are an AI language model assistant. Your task is to rerank passages related to a query
     based on their relevance. 
     The most relevant passages should be put at the beginning. 

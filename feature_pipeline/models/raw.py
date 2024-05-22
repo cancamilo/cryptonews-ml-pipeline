@@ -8,6 +8,7 @@ class ArticleRawModel(DataModel):
     title: str
     content: str
     summary: Optional[str] = None
+    published_at: Optional[str] = None
     
     class Settings:
         name = "articles"

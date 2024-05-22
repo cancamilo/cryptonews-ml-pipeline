@@ -50,7 +50,7 @@ def daily():
     # Execute daily ETL
     try:
         # For extract functions, default dates are today´s date.
-        ct_articles = coin_crawler.extract(n_scrolls=5)
+        ct_articles = coin_crawler.extract(n_scrolls=10)
 
         # Use event loop for telegram functions
         loop = asyncio.get_event_loop()
@@ -84,6 +84,6 @@ def handler(event, context: LambdaContext) -> dict[str, Any]:
 
 if __name__ == "__main__":
     event = {
-        "mode": "backfill",
+        "mode": "daily",
     }
     handler(event, None)

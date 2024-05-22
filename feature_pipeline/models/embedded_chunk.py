@@ -8,6 +8,7 @@ class ArticleEmbeddedChunkModel(VectorDBDataModel):
     title: str
     chunk_id: str
     chunk_content: str
+    published_at: str
     embedded_content: np.ndarray
     type: str
 
@@ -18,6 +19,7 @@ class ArticleEmbeddedChunkModel(VectorDBDataModel):
         data = {
             "id": self.entry_id,
             "title": self.title,
+            "published_at": self.published_at,
             "content": self.chunk_content,
             "type": self.type,
         }

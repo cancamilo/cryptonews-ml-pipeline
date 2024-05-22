@@ -9,12 +9,15 @@ class ArticleCleanedModel(VectorDBDataModel):
     title: str
     cleaned_content: str
     summary: Optional[str] = None
+    published_at: Optional[str] = None
     type: str = "article"
 
     def to_payload(self) -> Tuple[str, dict]:
         data = {
             "source": self.source,
             "title": self.title,
+            "summary": self.summary,
+            "published_at": self.published_at,
             "cleaned_content": self.cleaned_content,
             "type": self.type,
         }

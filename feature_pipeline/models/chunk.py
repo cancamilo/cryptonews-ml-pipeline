@@ -6,4 +6,5 @@ class ArticleChunkModel(DataModel):
     chunk_id: str
     title: str
     chunk_content: str
+    published_at: Optional[str] = None
     type: str

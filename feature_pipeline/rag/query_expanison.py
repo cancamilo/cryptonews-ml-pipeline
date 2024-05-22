@@ -13,7 +13,7 @@ class QueryExpansion:
         model = ChatOpenAI(model=settings.OPENAI_MODEL_ID, temperature=0)
 
         chain = GeneralChain().get_chain(
-            llm=model, output_key="expanded_queries", template=prompt_template
+            llm=model, output_key="expanded_queries", template=prompt_template, verbose=False
         )
 
         response = chain.invoke({"question": query})

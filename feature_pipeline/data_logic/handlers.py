@@ -34,6 +34,7 @@ class CleaningHandler:
                     title=raw_message.title,
                     cleaned_content=clean_text("".join(raw_message.content)),
                     summary=raw_message.summary,
+                    published_at=raw_message.published_at,
                     type="article",
                 )
             except Exception as e:
@@ -58,6 +59,7 @@ class ChunkingHandler:
                         title=clean_message.title,
                         chunk_id=hashlib.md5(chunk.encode()).hexdigest(),
                         chunk_content=chunk,
+                        published_at=clean_message.published_at,
                         type=clean_message.type,
                     )
                 except Exception as e:
@@ -80,6 +82,7 @@ class EmbeddingHandler:
                 chunk_content=chunk_model.chunk_content,
                 chunk_id=chunk_model.chunk_id,
                 embedded_content=embedd_text(chunk_model.chunk_content),
+                published_at=chunk_model.published_at,
                 type=chunk_model.type,
             )
         else:

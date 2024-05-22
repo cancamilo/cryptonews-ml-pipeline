@@ -4,7 +4,7 @@ import utils
 from qdrant_client import QdrantClient, models
 from rag.query_expanison import QueryExpansion
 from rag.reranking import Reranker
-from rag.self_query import SelfQuery
+from feature_pipeline.rag.query_meta_extractor import QueryMetaExtractor
 from sentence_transformers.SentenceTransformer import SentenceTransformer
 from settings import settings
 
@@ -26,7 +26,7 @@ class VectorRetriever:
         self.query = query
         self._embedder = SentenceTransformer(settings.EMBEDDING_MODEL_ID)
         self._query_expander = QueryExpansion()
-        self._metadata_extractor = SelfQuery()
+        self._metadata_extractor = QueryMetaExtractor()
         self._reranker = Reranker()
 
     def _search_single_query(
@@ -35,55 +35,24 @@ class VectorRetriever:
         assert k > 3, "k should be greater than 3"
 
         query_vector = self._embedder.encode(generated_query).tolist()
-        vectors = [
-            self._client.search(
-                collection_name="vector_posts",
-                query_filter=models.Filter(
-                    must=[
-                        models.FieldCondition(
-                            key="author_id",
-                            match=models.MatchValue(
-                                value=metadata_filter_value,
-                            ),
-                        )
-                    ]
-                ),
-                query_vector=query_vector,
-                limit=k // 3,
-            ),
-            self._client.search(
+        vectors = self._client.search(
                 collection_name="vector_articles",
-                query_filter=models.Filter(
-                    must=[
-                        models.FieldCondition(
-                            key="author_id",
-                            match=models.MatchValue(
-                                value=metadata_filter_value,
-                            ),
-                        )
-                    ]
-                ),
+                # TODO: find a strategy to set a proper date filter
+                # query_filter=models.Filter( 
+                #     must=[
+                #         models.FieldCondition(
+                #             key="published_at",
+                #             match=models.MatchValue(
+                #                 value=metadata_filter_value,
+                #             ),
+                #         )
+                #     ]
+                # ),
                 query_vector=query_vector,
                 limit=k // 3,
-            ),
-            self._client.search(
-                collection_name="vector_repositories",
-                query_filter=models.Filter(
-                    must=[
-                        models.FieldCondition(
-                            key="owner_id",
-                            match=models.MatchValue(
-                                value=metadata_filter_value,
-                            ),
-                        )
-                    ]
-                ),
-                query_vector=query_vector,
-                limit=k // 3,
-            ),
-        ]
+            )
 
-        return utils.flatten(vectors)
+        return vectors
 
     def retrieve_top_k(self, k: int, to_expand_to_n_queries: int) -> list:
         generated_queries = self._query_expander.generate_response(
@@ -94,16 +63,24 @@ class VectorRetriever:
             num_queries=len(generated_queries),
         )
 
-        author_id = self._metadata_extractor.generate_response(self.query)
+        metadata = self._metadata_extractor.generate_response(self.query)
+
+        # TODO: make use of the metadata as filters
+        currency = metadata.get("currency", None)
+        date = metadata.get("date", "")
+
         logger.info(
-            "Successfully extracted the author_id from the query.",
-            author_id=author_id,
+            f"Extracted currency from query {currency}"
+        )
+
+        logger.info(
+            f"Extracted date from query {date}"
         )
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             search_tasks = [
                 executor.submit(
-                    self._search_single_query, query, author_id, k
+                    self._search_single_query, query, date, k
                 )
                 for query in generated_queries
             ]

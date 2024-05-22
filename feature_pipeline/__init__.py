@@ -1,7 +1,6 @@
 import os
 import sys
 
-
+print("Init feature_pipeline")
 root = os.path.abspath(os.path.dirname(__file__))
-print("Init data ingestion pipeline", root)
 sys.path.insert(0, root)

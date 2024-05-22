@@ -6,11 +6,10 @@ from typing import Callable, Dict, List
 from telethon.sync import TelegramClient
 
 from newsapi import NewsApiClient
-from newsdataapi import NewsDataApiClient
 from pydantic import ValidationError
 
-from data_ingestion_pipeline.models.article_models import NewsAPIModel, NewsDataIOModel, TelegramMessage
-from settings import settings
+from models.documents import ArticleDocument
+from config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -91,7 +90,7 @@ class NewsFetcher:
             page_size=settings.ARTICLES_BATCH_SIZE,
         )
         return [
-            NewsAPIModel(**article).to_common()
+            ArticleDocument(**article).to_common()
             for article in response.get("articles", [])
         ]
 
@@ -104,7 +103,7 @@ class NewsFetcher:
             size=settings.ARTICLES_BATCH_SIZE,
         )
         return [
-            NewsDataIOModel(**article).to_common()
+            ArticleDocument(**article).to_common()
             for article in response.get("results", [])
         ]
 

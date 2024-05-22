@@ -9,7 +9,7 @@ from crawlers import CoinTelegraphCrawler, TelegramChannelsCrawler, NewsFetcher
 
 logger = Logger(service="text-etl-fetcher/crawler")
 date_format="%Y-%m-%d"
-coin_crawler = CoinTelegraphCrawler(dev=False)
+coin_crawler = CoinTelegraphCrawler(dev=True)
 telegram_crawler = TelegramChannelsCrawler()
 news_api_crawler = NewsFetcher()
 
@@ -18,14 +18,14 @@ def backfill():
         start_dt = datetime.now() - timedelta(days=360)
         end_dt = datetime.now()
         ct_articles = coin_crawler.extract(
-            n_scrolls=30, 
+            n_scrolls=5, 
             start_date=start_dt.strftime(date_format),
             end_date=end_dt.strftime(date_format)
         )
 
         # Use event loop for telegram functions
         loop = asyncio.get_event_loop()
-        telegram_messages = loop.run_until_complete(telegram_crawler.extract(channel_count=1000, loop=loop))
+        telegram_messages = loop.run_until_complete(telegram_crawler.extract(channel_count=2, loop=loop))
 
         # Extract maximum allowed articles from NewsAPI
         start_dt = datetime.now() - timedelta(days=10)
@@ -45,7 +45,6 @@ def backfill():
     finally:
         ArticleDocument.close_connection()
         return response
-
 
 def daily():
     # Execute daily ETL

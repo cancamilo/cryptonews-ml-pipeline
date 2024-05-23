@@ -1,0 +1,31 @@
+# ML Pipelines for RAG
+
+
+A real time machine learning system that processes news from multiple sources to enable retrieval augmented generation and data collection for LLMs finetuning.
+
+With a real time approach, the text data becomes available in different forms for being consumed for both training and inference through a feature store. This is preferred over a batching strategy which would require a more complex synchronization between databases.
+
+The system architecture is structured according to a multiple pipeline design pattern composed of the following modules:
+
+- Data ingestion
+- Feature pipeline
+- Training: TBD
+- Inference: TBD
+
+Repository outline:
+
+- [Data ingestion Pipeline](#data-ingestion-pipeline)
+    - [MongoDB Sync](#mongodb-sync)
+- [Feature Pipeline](#feature-pipeline)
+- [Training](#training-pipeline)
+- [Inference](#inference)
+
+## Data Ingestion Pipeline
+
+### MongoDB sync
+
+## Feature Pipeline
+
+## Training
+
+## Inference 

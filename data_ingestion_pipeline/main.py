@@ -27,17 +27,7 @@ def backfill():
         loop = asyncio.get_event_loop()
         telegram_messages = loop.run_until_complete(telegram_crawler.extract(channel_count=2, loop=loop))
 
-        # Extract maximum allowed articles from NewsAPI
-        start_dt = datetime.now() - timedelta(days=10)
-        end_dt = datetime.now()
-
-        api_articles = news_api_crawler.extract(
-            page=1,
-            start_date=start_dt.strftime(date_format),
-            end_date=end_dt.strftime(date_format)
-        )
-
-        merged_articles = ct_articles + telegram_messages + api_articles
+        merged_articles = ct_articles + telegram_messages
         ArticleDocument.bulk_insert(merged_articles)
         response = {"statusCode": 200, "body": json.dumps([article.model_dump(exclude="id") for article in merged_articles])}
     except Exception as e:
@@ -56,16 +46,7 @@ def daily():
         loop = asyncio.get_event_loop()
         telegram_messages = loop.run_until_complete(telegram_crawler.extract_day(loop=loop))
 
-        # Extract yesterdays news since free api has 24 hours delay.
-        start_dt = (datetime.now() - timedelta(days=1)).strftime(date_format)
-        end_dt = (datetime.now() - timedelta(days=1)).strftime(date_format)
-        api_articles = news_api_crawler.extract(
-            page=1,
-            start_date=start_dt,
-            end_date=end_dt
-        )
-
-        merged_articles = ct_articles + telegram_messages + api_articles
+        merged_articles = ct_articles + telegram_messages
         ArticleDocument.bulk_insert(merged_articles)
         response = {"statusCode": 200, "body": json.dumps([article.model_dump(exclude="id") for article in merged_articles])}
     except Exception as e:

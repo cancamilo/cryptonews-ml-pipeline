@@ -149,6 +149,7 @@ class TelegramChannelsFetcher:
             
 
 if __name__ == "__main__":
+    # Just to test telegram data fetching
     import asyncio
     loop = asyncio.get_event_loop()
     tele = TelegramChannelsFetcher()

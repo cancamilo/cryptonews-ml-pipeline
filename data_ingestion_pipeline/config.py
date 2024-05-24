@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     NEWS_TOPIC: str
 
     # MongoDB
-    MONGO_DATABASE_HOST: str = "mongodb://localhost:30001,localhost:30002,localhost:30003/?replicaSet=my-replica-set"
+    MONGO_DATABASE_HOST: str = "mongodb://mongo1:30001,mongo2:30002,mongo3:30003/?replicaSet=my-replica-set"
     MONGO_DATABASE_NAME: str = "crypto-articles"
 
 settings = Settings()

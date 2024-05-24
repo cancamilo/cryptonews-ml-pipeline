@@ -5,7 +5,7 @@ help:
 
 .PHONY: create-local-network
 create-local-network:
-	docker network create text_etl_fetcher_local
+	docker network create data_ingestion_pipeline_shared_network
 
 .PHONY: start-mongodb
 start-mongodb:

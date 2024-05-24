@@ -56,7 +56,7 @@ RUN poetry export -f requirements.txt > requirements.txt && \
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -P ${LAMBDA_TASK_ROOT}
 
 # Copy function code
-COPY ./data_ingestion_pipeline ${LAMBDA_TASK_ROOT}
+COPY . ${LAMBDA_TASK_ROOT}
 
 # Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
 CMD ["main.handler"]

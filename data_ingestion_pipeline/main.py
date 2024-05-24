@@ -9,7 +9,7 @@ from crawlers import CoinTelegraphCrawler, TelegramChannelsCrawler, NewsFetcher
 
 logger = Logger(service="text-etl-fetcher/crawler")
 date_format="%Y-%m-%d"
-coin_crawler = CoinTelegraphCrawler(dev=True)
+coin_crawler = CoinTelegraphCrawler(dev=False)
 telegram_crawler = TelegramChannelsCrawler()
 news_api_crawler = NewsFetcher()
 

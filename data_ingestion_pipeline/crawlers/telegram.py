@@ -39,8 +39,7 @@ class TelegramChannelsCrawler:
             logger.error(f"An error ocurred parsing the text data: {str(e)}")
             return ""
     
-    async def extract_day(self, date: str = datetime.now().strftime(date_format), channel_count=100, loop=None):
-        channel_count = 100
+    async def extract_day(self, date: str = datetime.now().strftime(date_format), channel_count=10, loop=None):
         messages = []
         self.loop = loop
         self.client = TelegramClient(

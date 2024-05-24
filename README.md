@@ -4,7 +4,7 @@ A real time machine learning system that processes cryptocurrency news from mult
 
 <br>
 <p align="center">
-    <img src="media/ml-flow-chart.png" alt="System Architecture" title="System Architecture">
+    <img src="media/ml-flow-chart.svg" alt="System Architecture" title="System Architecture">
 </p>
 <br>
 

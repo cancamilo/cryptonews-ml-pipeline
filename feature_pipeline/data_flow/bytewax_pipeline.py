@@ -6,7 +6,7 @@ from bytewax.dataflow import Dataflow
 from bytewax.connectors.stdio import StdOutSink
 from data_flow.stream_input import RabbitMQSource
 from data_flow.stream_output import QdrantOutput
-from feature_pipeline.data_logic.handlers import (
+from data_logic.handlers import (
     CleaningHandler,
     RawDataHandler,
     ChunkingHandler,

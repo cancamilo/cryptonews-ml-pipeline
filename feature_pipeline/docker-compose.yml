@@ -33,14 +33,16 @@ services:
       - 30003:30003
 
   mq:
-    image: rabbitmq:3-management-alpine
+    build:
+      context: .
+      dockerfile: rabbitmq.dockerfile
     container_name: scrabble_mq
     ports:
-      - "5673:5672"
-      - "15673:15672"
+      - 5673:5672
+      - 15673:15672
     volumes:
-      - ~/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/rabbitmq/log/:/var/log/rabbitmq
+      - ../data/rabbitmq/data/:/var/lib/rabbitmq/
+      - ../data/rabbitmq/log/:/var/log/rabbitmq
     restart: always
 
   qdrant:

@@ -1,9 +1,5 @@
 version: "3.8"
 
-networks:
-  shared_network:
-    driver: bridge
-    
 services:
   mongo1:
     image: mongo:5
@@ -13,8 +9,6 @@ services:
       - ../data/mongo-1:/data/db
     ports:
       - 30001:30001
-    networks:
-      - shared_network
     healthcheck:
       test: test $$(echo "rs.initiate({_id:'my-replica-set',members:[{_id:0,host:\"mongo1:30001\"},{_id:1,host:\"mongo2:30002\"},{_id:2,host:\"mongo3:30003\"}]}).ok || rs.status().ok" | mongo --port 30001 --quiet) -eq 1
       interval: 10s
@@ -37,17 +31,18 @@ services:
       - ../data/mongo-3:/data/db
     ports:
       - 30003:30003
-    networks:
-      - shared_network
+
   mq:
-    image: rabbitmq:3-management-alpine
+    build:
+      context: feature_pipeline
+      dockerfile: rabbitmq.dockerfile
     container_name: scrabble_mq
     ports:
-      - "5673:5672"
-      - "15673:15672"
+      - 5673:5672
+      - 15673:15672
     volumes:
-      - ~/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/rabbitmq/log/:/var/log/rabbitmq
+      - ../data/rabbitmq/:/var/lib/rabbitmq/
+      - ../data/rabbitmq/log/:/var/log/rabbitmq
     restart: always
 
   qdrant:
@@ -63,3 +58,43 @@ services:
     volumes:
       - ../data/qdrant_data:/qdrant_data
     restart: always
+  
+  crawler:
+    platform: linux/amd64
+    build:
+      context: data_ingestion_pipeline
+      dockerfile: crawler.dockerfile
+    image: crawler:latest
+    container_name: crawler-lambda
+    ports:
+      - 9000:8080
+    env_file: data_ingestion_pipeline/.env.docker
+    depends_on:
+      - mongo3
+
+  cdc:
+    platform: linux/amd64
+    build:
+      context: mongodb_sync
+      dockerfile: cdc.dockerfile
+    image: cdc:latest
+    container_name: cdc-service
+    ports:
+      - 7000:8000
+    env_file: mongodb_sync/.env.docker
+    depends_on:
+      - mongo3
+      - mq
+
+  stream_processor:
+    platform: linux/amd64
+    build:
+      context: feature_pipeline
+      dockerfile: stream_processor.dockerfile
+    image: stream_processor:latest
+    container_name: stream-processor
+    env_file: feature_pipeline/.env.docker
+    depends_on:
+      - mongo3
+      - mq
+      - qdrant

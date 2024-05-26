@@ -11,7 +11,7 @@ class AppSettings(BaseSettings):
     EMBEDDING_MODEL_DEVICE: str = "cpu"
 
     OPENAI_MODEL_ID: str = "gpt-4-1106-preview"
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: str = ""
 
     # MongoDB configs
     MONGO_DATABASE_HOST: str = "mongodb://localhost:30001,localhost:30002,localhost:30003/?replicaSet=my-replica-set"

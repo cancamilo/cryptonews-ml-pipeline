@@ -18,3 +18,14 @@ local-bytewax: # Run bytewax pipeline
 
 local-test-retriever: # Test retriever
 	poetry run python retriever.py
+
+build:
+	@docker buildx build --platform linux/amd64 -t stream_processor -f stream_processor.dockerfile .
+
+start:
+	@docker run \
+		--name stream-processor \
+		-p 9000:8080 \
+		--network feature_pipeline_default \
+		--platform linux/amd64 \
+		stream_processor:latest

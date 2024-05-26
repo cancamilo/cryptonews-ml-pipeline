@@ -4,7 +4,7 @@ import utils
 from qdrant_client import QdrantClient, models
 from rag.query_expanison import QueryExpansion
 from rag.reranking import Reranker
-from feature_pipeline.rag.query_meta_extractor import QueryMetaExtractor
+from rag.query_meta_extractor import QueryMetaExtractor
 from sentence_transformers.SentenceTransformer import SentenceTransformer
 from settings import settings
 

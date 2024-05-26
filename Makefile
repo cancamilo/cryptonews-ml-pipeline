@@ -5,41 +5,52 @@ help:
 
 .PHONY: create-local-network
 create-local-network:
-	docker network create data_ingestion_pipeline_shared_network
+	docker network create text-fetch-etl
 
-.PHONY: start-mongodb
-start-mongodb:
-	docker-compose -f data_ingestion_pipeline/docker-compose.yml up -d
+.PHONY: start-db
+start-db:
+	docker-compose -f docker-compose.yml up -d
 
-.PHONY: stop-mongodb
-stop-mongodb:
-	docker-compose -f data_ingestion_pipeline/docker-compose.yml down
+.PHONY: stop-db
+stop-db:
+	docker-compose -f docker-compose.yml down
 
-.PHONY: crawler-local-build
-crawler-local-build:
-	@docker buildx build --platform linux/amd64 -t crawler -f data_ingestion_pipeline/crawler.dockerfile .
+.PHONY: crawler-docker-build
+crawler-docker-build:
+	@docker buildx build --platform linux/amd64 -t crawler -f data_ingestion_pipeline/crawler.dockerfile data_ingestion_pipeline
 
-.PHONY: crawler-local-deploy
-crawler-local-deploy: # Deploy lambda crawler custom docker image on local.
+.PHONY: crawler-docker-run
+crawler-docker-run:
+	@docker run --name crawler-lambda -p 9000:8080 -d --env-file data_ingestion_pipeline/.env.docker --network text-fetch-etl_default --platform linux/amd64 crawler:latest
+
+.PHONY: cdc-docker-build
+cdc-docker-build:
+	docker buildx build --platform linux/amd64 -t cdc -f mongodb_sync/cdc.dockerfile mongodb_sync
+
+.PHONY: cdc-docker-run
+cdc-docker-run:
 	docker run \
-		-p 9000:8080 \
-		--env-file .env.docker \
-		--network data_ingestion_pipeline_shared_network \
-		--platform linux/amd64 \
-		crawler:latest
-
-.PHONY: cdc-local-build
-cdc-local-build:
-	docker buildx build --platform linux/amd64 -t cdc -f mongo_sync_pipeline/cdc.dockerfile .
-
-.PHONY: cdc-local-deploy
-cdc-local-deploy:
-	docker run \
+		--name cdc-service \
 		-p 7000:8000 \
+		-d \
 		--env-file .env.docker \
-		--network data_ingestion_pipeline_shared_network \
+		--network text-fetch-etl_default \
 		--platform linux/amd64 \
 		cdc:latest
+
+.PHONY: streamer-docker-build
+streamer-docker-build:
+	docker buildx build --platform linux/amd64 -t stream_processor -f feature_pipeline/stream_processor.dockerfile feature_pipeline
+
+.PHONY: streamer-docker-run
+streamer-docker-run:
+	docker run \
+		--name stream-processor \
+		-d \
+		--network text-fetch-etl_default \
+		--platform linux/amd64 \
+		stream_processor:latest
+	
 
 .PHONY: stop-crawler
 stop-crawler: # Stop the crawler container
@@ -49,18 +60,22 @@ stop-crawler: # Stop the crawler container
 stop-cdc: # Stop the crawler container
 	@docker stop $$(docker ps -a -q --filter ancestor=cdc)
 
+.PHONY: stop-streamer
+streamer-cdc: # Stop the crawler container
+	@docker stop $$(docker ps -a -q --filter ancestor=streamer)
+
 FORCE_BUILD=1
 
 .PHONY: start-services
-start-services: start-mongodb
+start-services: start-db
 ifeq ($(FORCE_BUILD),1)
-	$(MAKE) crawler-local-build cdc-local-build
+	$(MAKE) crawler-docker-run cdc-docker-build streamer-docker-build
 endif
-	$(MAKE) crawler-local-deploy cdc-local-deploy
+	$(MAKE) crawler-docker-run cdc-docker-run streamer-docker-run
 
-.PHONY: stop-all
-stop-all: stop-mongodb
-	@docker stop $$(docker ps -q)
+.PHONY: stop-services
+stop-services: stop-db
+	@docker stop $$(docker ps -q -a) & docker rm -f $$(docker ps -a -q)
 
 .PHONY: remove-images
 remove-images: # Remove all Docker images

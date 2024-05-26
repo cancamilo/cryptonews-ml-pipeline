@@ -12,6 +12,12 @@ class QdrantDatabaseConnector:
     _instance: QdrantClient = None
 
     def __init__(self):
+        logger.info("trying to connect to qdrant")
+        logger.info("host")
+        logger.info(settings.QDRANT_DATABASE_HOST)
+        logger.info("port")
+        logger.info(settings.QDRANT_DATABASE_PORT)
+                
         if self._instance is None:
             try:
                 if settings.USE_QDRANT_CLOUD:

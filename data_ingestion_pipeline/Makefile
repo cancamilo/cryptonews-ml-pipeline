@@ -10,12 +10,12 @@ start-mongodb:
 stop-mongodb:
 	docker-compose -f docker-compose.yml down
 
-.PHONY: crawler-local-build
-crawler-local-build:
+.PHONY: crawler-docker-build
+crawler-docker-build:
 	@docker buildx build --platform linux/amd64 -t crawler -f crawler.dockerfile .
 
-.PHONY: crawler-local-deploy
-crawler-local-deploy: # Deploy lambda crawler custom docker image on local.
+.PHONY: crawler-docker-run
+crawler-docker-run: # Deploy lambda crawler custom docker image on local.
 	docker run \
 		-p 9000:8080 \
 		--env-file .env.docker \

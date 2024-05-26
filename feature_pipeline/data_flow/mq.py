@@ -50,6 +50,11 @@ class RabbitMQConnection:
         self.close()
 
     def connect(self):
+        logger.info("Connecting to RabbitMQ")
+        logger.info(f"host {self.host}")
+        logger.info(f"port {self.port}")
+        logger.info(f"user {self.username}")
+        logger.info(f"pass {self.password}")
         try:
             credentials = pika.PlainCredentials(self.username, self.password)
             self._connection = pika.BlockingConnection(
@@ -61,6 +66,7 @@ class RabbitMQConnection:
                 )
             )
         except pika.exceptions.AMQPConnectionError as e:
+            logger.info(f"exception {str(e)}")
             logger.exception("Failed to connect to RabbitMQ.")
 
             if not self.fail_silently:

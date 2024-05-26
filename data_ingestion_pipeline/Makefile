@@ -32,9 +32,9 @@ FORCE_BUILD=1
 .PHONY: start
 start: start-mongodb
 ifeq ($(FORCE_BUILD),1)
-	$(MAKE) crawler-local-build
+	$(MAKE) crawler-docker-build
 endif
-	$(MAKE) crawler-local-deploy
+	$(MAKE) crawler-docker-run
 
 .PHONY: stop
 stop-all: stop-mongodb

@@ -46,6 +46,27 @@ Qdrant: TDB
 
 CometML: TDB
 
+## Running the pipeline locally
+
+All you need is to have docker installed in your host machine, then the entire pipeline can be run using the make file:
+
+```
+make start
+```
+
+This will build all the necessary docker images and run them in the same network using the [docker-compose.yml](/docker-compose.yml)
+
+Once all services are running you can trigger the lambda function to fetch data by calling:
+
+```
+curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" \
+	-d '{"mode": "daily"}'
+```
+
+The logs in each of the running services will show the processed events. A few seconds after triggering the text extraction you will have the vectorized and raw text in the QdrantDB ready to be accesed.
+
+The next sections give more details into the individual services.
+
 ## Data Ingestion Pipeline
 
 The code for this module is under the [data_ingestion_pipeline](/data_ingestion_pipeline/) folder. This is the starting point where the news data is collected in the database. 

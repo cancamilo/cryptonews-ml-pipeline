@@ -1,6 +1,7 @@
 # News ML Pipelines for RAG
 
-A real time machine learning system that processes cryptocurrency news from multiple sources to enable retrieval augmented generation and data collection for LLMs finetuning.  By having access to the most recent news, it allows for an assessment of the cryptocurrency market sentiment, a crucial factor that assists investors in making decisions.
+A real time machine learning system that processes cryptocurrency news from multiple sources to enable retrieval augmented generation and data collection for LLMs finetuning. By providing access to recent news, it offers an up-to-date, comprehensive overview of the cryptocurrency market through text summarization, sentiment analysis and RAG.
+
 
 <br>
 <p align="center">

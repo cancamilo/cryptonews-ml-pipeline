@@ -37,7 +37,7 @@ make local-test MODE=backfill
 For stopping all running containers:
 
 ```
-make strop-all
+make stop
 ```
 
 After the execution of the steps above, you should have articles data available in the MongoDB.

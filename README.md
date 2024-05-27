@@ -84,12 +84,24 @@ Check the module [README](/data_ingestion_pipeline/README) for details on the co
 
 ### MongoDB sync
 
-This submodule is part of the data ingestion pipeline. This standalone service listens to the insert operations in the MongoDB and forwards these changes to the RabbitMQ queue. The code is found under [mongodb_sync](/mongodb_sync). 
+This submodule is part of the data ingestion pipeline. This standalone service listens to the insert operations in the MongoDB and forwards these changes to the RabbitMQ queue. In our case, the text documents inserted in the MongoDb are captured by the service and forwarded to the queue.
+
+The code is found under [mongodb_sync](/mongodb_sync). 
 
 ## Feature Pipeline
 
+This is where the text data coming from different sources is mixed and postprocessed. The service in charge of this is a [bytewax flow](/feature_pipeline/data_flow/bytewax_pipeline.py). A flow is composed of **data sources**, **mappers** in charge of processing the **data sources** and outputs to write the postprocessed data.
+
+Particularly, the flow read the text coming from the RabbitQM. After, the input text is cleaned, chunked and embedded with a transformer model from **sentence-transformers**. Both the cleaned text and embedded are saved to QuadrantDB which is the featue store. 
+
 The code for this module is under the [feature_pipeline](/feature_pipeline) folder. 
 
+## Retrieval Augmented Generation
+
+
+
 ## Training
+
+
 
 ## Inference 

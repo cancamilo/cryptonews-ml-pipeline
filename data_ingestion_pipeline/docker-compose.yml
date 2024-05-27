@@ -31,3 +31,16 @@ services:
       - ../data/mongo-3:/data/db
     ports:
       - 30003:30003
+
+  crawler:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: crawler.dockerfile
+    image: crawler:latest
+    container_name: crawler-lambda
+    ports:
+      - 9000:8080
+    env_file: .env.docker
+    depends_on:
+      - mongo3

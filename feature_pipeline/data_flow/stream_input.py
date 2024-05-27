@@ -21,7 +21,7 @@ class RabbitMQPartition(StatefulSourcePartition, Generic[DataT, MessageT]):
         self.connection.connect()
         self.channel = self.connection.get_channel()
         
-        # TODO: remove aftee testing. Ensure the queue exists
+        # TODO: remove after testing. Ensure the queue exists
         self.channel.queue_declare(queue=queue_name, durable=True)
 
     def next_batch(self, sched: Optional[datetime]) -> Iterable[DataT]:

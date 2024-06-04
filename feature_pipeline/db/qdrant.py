@@ -55,10 +55,9 @@ class QdrantDatabaseConnector:
     def write_data(self, collection_name: str, points: Batch):
         try:
             self._instance.upsert(collection_name=collection_name, points=points)
-        except Exception:
-            logger.exception("An error occurred while inserting data.")
-
-            raise
+        except Exception as e:
+            logger.exception(f"An error occurred while inserting data. {e}")
+            raise e
 
     def scroll(self, collection_name: str, limit: int):
         return self._instance.scroll(collection_name=collection_name, limit=limit)

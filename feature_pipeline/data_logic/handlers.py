@@ -35,10 +35,10 @@ class CleaningHandler:
                     cleaned_content=clean_text("".join(raw_message.content)),
                     summary=raw_message.summary,
                     published_at=raw_message.published_at,
-                    type="article",
+                type="article",
                 )
             except Exception as e:
-                print(e)
+                logger.error(f"Error ocurred creating ArticleCleanedModel {e.errors()}")
                 return {"failed": raw_message}
         else:
             raise ValueError("Unsupported data type")
@@ -63,7 +63,7 @@ class ChunkingHandler:
                         type=clean_message.type,
                     )
                 except Exception as e:
-                    print(e.errors())
+                    logger.error(f"Error ocurred creating ArticleCleanedModel {e.errors()}")
                     raise e
                 
                 data_models_list.append(model)
@@ -76,14 +76,17 @@ class EmbeddingHandler:
     @staticmethod
     def handle_message(chunk_model: VectorDBDataModel) -> VectorDBDataModel:
         if isinstance(chunk_model, ArticleChunkModel):
-            return ArticleEmbeddedChunkModel(
-                entry_id=chunk_model.entry_id,
-                title=chunk_model.title,
-                chunk_content=chunk_model.chunk_content,
-                chunk_id=chunk_model.chunk_id,
-                embedded_content=embedd_text(chunk_model.chunk_content),
-                published_at=chunk_model.published_at,
-                type=chunk_model.type,
-            )
+            try:
+                return ArticleEmbeddedChunkModel(
+                    entry_id=chunk_model.entry_id,
+                    title=chunk_model.title,
+                    chunk_content=chunk_model.chunk_content,
+                    chunk_id=chunk_model.chunk_id,
+                    embedded_content=embedd_text(chunk_model.chunk_content),
+                    published_at=chunk_model.published_at,
+                    type=chunk_model.type,
+                )
+            except Exception as e:
+                logger.error(f"Error ocurred creating ArticleCleanedModel {e.errors()}")
         else:
             raise ValueError("Unsupported data type")

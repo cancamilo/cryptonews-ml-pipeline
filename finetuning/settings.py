@@ -1,8 +1,13 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class AppSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=os.path.join(dir_path, "./.env"),
+        env_file_encoding="utf-8"
+    )
 
     OPENAI_MODEL_ID: str = "gpt-4-1106-preview"
     OPENAI_API_KEY: str = ""
@@ -16,7 +21,7 @@ class AppSettings(BaseSettings):
 
 
     # COMET SETTINGS
-    COMET_API_KEY: str = ""
+    COMET_API_KEY: str
     COMET_PROJECT: str = "crypto-reporter"
     COMET_WORKSPACE: str = "cancamilo"
 

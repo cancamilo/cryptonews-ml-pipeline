@@ -30,6 +30,6 @@ RUN chmod +x /wait-mq.sh
 # Make port 8000 available to the world outside this container
 EXPOSE 8000
 
-ENV RUST_BACKTRACE=1
+ENV RUST_BACKTRACE='full'
 
-CMD ["/wait-mq.sh","python", "-m", "bytewax.run", "data_flow/bytewax_pipeline"]
+CMD ["/wait-mq.sh", "python", "-m", "bytewax.run", "data_flow/bytewax_pipeline"]

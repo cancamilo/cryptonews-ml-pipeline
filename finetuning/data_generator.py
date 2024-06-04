@@ -26,11 +26,14 @@ class DatasetGenerator:
             initial_prompt = self.data_formatter.format_prompt(batch, i)
             batch_result = self.api_communicator.request(initial_prompt)
 
-            # only process batch if response is valid
-            if len(batch_result) > 0:
-                response += batch_result
-                for j in range(i, i + batch_size):
-                    response[j]["content"] = all_contents[j]
+            if len(batch_result) != len(batch):
+                continue
+            
+            for j in range(0, len(batch_result)):
+                batch_result[j]["content"] = batch[j]
+
+            response.append(batch_result)
+                
 
         return response
     
@@ -47,9 +50,7 @@ class DatasetGenerator:
                 all_cleaned_contents.append(cleaned_content)
 
         return all_cleaned_contents
-    
-    def generate_data_from_collection(self, collection_name: str, batch_size: int =1):
-        all_contents = self.fetch_all_cleaned_content(collection_name)
+
         
     
     def push_to_comet(self, data: list, collection_name: str):
@@ -87,7 +88,8 @@ if __name__ == "__main__":
     openai_handler = OpenAIHandler()
     formatter = DataFormatter()
     generator = DatasetGenerator(openai_handler, formatter)
-    training_data = generator.generate_data_from_collection(collection_name)
+    all_contents = generator.fetch_all_cleaned_content(collection_name)
+    training_data = generator.generate_training_data(all_contents[:10], 1)
     generator.push_to_comet(training_data, collection_name)
 
 

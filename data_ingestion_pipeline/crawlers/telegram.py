@@ -24,10 +24,10 @@ class TelegramChannelsCrawler:
         {"id": "@tokens_stream", "n_messages": 1000},  # good for short news
         {"id": "@maptoken", "n_messages": 1000},  # good for short news
         {"id": "@getcoinit", "n_messages": 1000},  # good for short news
-        {
-            "id": "@cointelegraph",
-            "n_messages": 10000,
-        },  # really good and a lot of data. only headlines and short descriptions available and needs cleaning.
+        # {
+        #     "id": "@cointelegraph",
+        #     "n_messages": 10000,
+        # },  # really good and a lot of data. only headlines and short descriptions available and needs cleaning.
     ]
 
     
@@ -62,7 +62,7 @@ class TelegramChannelsCrawler:
                     offset_date=datetime.strptime(date, self.date_format).date(),
                     reverse=True
                 ):
-                    if msg.message is not None:
+                    if msg.message is not None and not self.is_promotional(msg.message):
                         messages.append(
                             ArticleDocument(
                                 source="telegram",
@@ -94,10 +94,10 @@ class TelegramChannelsCrawler:
                 async for msg in self.client.iter_messages(
                     input_channel["id"], limit=channel_count
                 ):
-                    if msg.message is not None:
+                    if msg.message is not None and not self.is_promotional(msg.message):
                         messages.append(
                             ArticleDocument(
-                                source="telegram",
+                                source=input_channel["id"],
                                 published_at=msg.date.strftime("%Y-%m-%d"),
                                 title=self.__extract_first_sentence(msg.message),
                                 content=msg.message,
@@ -105,6 +105,10 @@ class TelegramChannelsCrawler:
                         )
 
             return messages
+        
+    def is_promotional(self, content):
+        rexp = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        return bool(re.search(rexp, content))
 
 
 

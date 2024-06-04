@@ -5,11 +5,18 @@ help:
 
 .PHONY: start
 start:
-	docker-compose -f docker-compose.yml up -d
+	docker-compose -f docker-compose.yml up -d --build
 
 .PHONY: stop
 stop:
 	docker-compose -f docker-compose.yml down
+
+scrolls=20
+k_channel=20 
+
+.PHONY: run_backfill
+run_backfill:
+	@poetry -C data_ingestion_pipeline run python data_ingestion_pipeline/backfill.py --scrolls=$(scrolls) --k_channel=$(k_channel)
 
 .PHONY: crawler-docker-build
 crawler-docker-build:
@@ -68,6 +75,10 @@ stop-services:
 remove-images: # Remove all Docker images
 	@docker rmi -f $$(docker images -q)
 
-local-test: # Send test command on local to test  the lambda
+test-daily: # Send test command on local to test  the lambda
 	curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" \
 	  	-d '{"mode": "backfill"}'
+
+test-backfill: # Send test command on local to test  the lambda
+	curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" \
+	  	-d '{"mode": "backfill", "scrolls": 40}'

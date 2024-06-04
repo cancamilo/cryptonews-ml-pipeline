@@ -9,13 +9,12 @@ from crawlers import CoinTelegraphCrawler, TelegramChannelsCrawler, NewsFetcher
 
 logger = Logger(service="text-etl-fetcher/crawler")
 date_format="%Y-%m-%d"
-coin_crawler = CoinTelegraphCrawler(dev=False)
+coin_crawler = CoinTelegraphCrawler(dev=True)
 telegram_crawler = TelegramChannelsCrawler()
 news_api_crawler = NewsFetcher()
 
-def backfill():
+def backfill(scrolls=30):
     try:
-        scrolls = 100
         logger.info(f"Starting crawler with {scrolls} scrolls.")
 
         start_dt = datetime.now() - timedelta(days=360)
@@ -30,11 +29,11 @@ def backfill():
 
         # Use event loop for telegram functions
         loop = asyncio.get_event_loop()
-        telegram_messages = loop.run_until_complete(telegram_crawler.extract(channel_count=100, loop=loop))
+        telegram_messages = loop.run_until_complete(telegram_crawler.extract(channel_count=10, loop=loop))
 
         merged_articles = ct_articles + telegram_messages
         ArticleDocument.bulk_insert(merged_articles)
-        response = {"statusCode": 200, "body": json.dumps([article.model_dump(exclude="id") for article in merged_articles])}
+        response = {"statusCode": 200, "body": json.dumps([article.model_dump(exclude="id") for article in merged_articles[:5]])}
     except Exception as e:
         response = {"statusCode": 500, "body": f"An error occurred: {str(e)}"}
     finally:
@@ -53,7 +52,7 @@ def daily():
 
         merged_articles = ct_articles + telegram_messages
         ArticleDocument.bulk_insert(merged_articles)
-        response = {"statusCode": 200, "body": json.dumps([article.model_dump(exclude=["id", "content"]) for article in merged_articles[:10]])}
+        response = {"statusCode": 200, "body": json.dumps([article.model_dump(exclude=["id", "content"]) for article in merged_articles[:5]])}
     except Exception as e:
         response = {"statusCode": 500, "body": f"An error occurred: {str(e)}"}
     finally:
@@ -63,7 +62,8 @@ def daily():
 def handler(event, context: LambdaContext) -> dict[str, Any]:
     mode = event.get("mode")
     if mode == "backfill":
-        return backfill()
+        scrolls = event.get("scrolls", 30)
+        return backfill(scrolls)
     elif mode == "daily":
         return daily()
     else:
@@ -73,6 +73,7 @@ def handler(event, context: LambdaContext) -> dict[str, Any]:
 
 if __name__ == "__main__":
     event = {
-        "mode": "daily",
+        "mode": "backfill",
+        "scrolls": 300
     }
     handler(event, None)

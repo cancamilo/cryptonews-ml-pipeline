@@ -125,7 +125,7 @@ class CoinTelegraphCrawler(BaseCrawler):
             self.driver.execute_script("window.scrollBy(0, 2 * window.innerHeight);")
 
             # Wait to load page
-            time.sleep(1.5)
+            time.sleep(1)
 
             scrolls += 1
             if scrolls == n:

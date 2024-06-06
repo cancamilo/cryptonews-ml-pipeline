@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import Batch, Distance, VectorParams
-from settings import settings
+from training.settings import settings
 import logging
 
 logging.basicConfig(level=logging.INFO)

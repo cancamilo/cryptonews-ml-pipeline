@@ -4,7 +4,7 @@ from db.qdrant import connection as client
 from utils.data_formatter import DataFormatter
 from utils.openai_helper import OpenAIHandler
 from comet_ml import Artifact, Experiment
-from settings import settings
+from training.settings import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

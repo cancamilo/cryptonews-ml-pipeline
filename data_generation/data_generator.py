@@ -4,7 +4,7 @@ from db.qdrant import connection as client
 from utils.data_formatter import DataFormatter
 from utils.openai_helper import OpenAIHandler
 from comet_ml import Artifact, Experiment
-from training.settings import settings
+from settings import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class DatasetGenerator:
             for j in range(0, len(batch_result)):
                 batch_result[j]["content"] = batch[j]
 
-            response.append(batch_result)
+            response += batch_result
                 
 
         return response

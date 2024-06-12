@@ -38,7 +38,7 @@ def build_qlora_model(
 
     model = AutoModelForCausalLM.from_pretrained(
         pretrained_model_name_or_path,
-        token=settings.HF_ACCESS_TOKEN,
+        token=settings.HUGGINGFACE_ACCESS_TOKEN,
         device_map=torch.cuda.current_device(),
         quantization_config=bnb_config,
         use_cache=False,
@@ -48,7 +48,7 @@ def build_qlora_model(
 
     tokenizer = AutoTokenizer.from_pretrained(
         pretrained_model_name_or_path,
-        token=settings.HF_ACCESS_TOKEN,
+        token=settings.HUGGINGFACE_ACCESS_TOKEN,
         cache_dir=str(cache_dir) if cache_dir else None,
     )
     tokenizer.pad_token = tokenizer.eos_token

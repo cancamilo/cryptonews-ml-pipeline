@@ -1,14 +1,16 @@
+import logging
 import os
-from typing import Tuple
 
+import comet_ml
 import pandas as pd
-
+import qwak
 import torch as th
 import yaml
 from comet_ml import Experiment
 from datasets import DatasetDict, load_dataset
+from finetuning.dataset_client import DatasetClient
+from finetuning.settings import settings
 from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
-import qwak
 from qwak.model.adapters import DefaultOutputAdapter
 from qwak.model.base import QwakModel
 from qwak.model.schema import ModelSchema
@@ -26,7 +28,6 @@ from transformers import (
 
 from training import logger_utils
 from training.dataset_client import DatasetClient
-from training.utils import build_qlora_model
 from training.settings import settings
 
 
@@ -36,183 +37,90 @@ logger = logger_utils.get_logger(__name__)
 class NewsReporterMistralModel(QwakModel):
     def __init__(
         self,
-        use_experiment_tracker: bool = True,
-        register_model_to_model_registry: bool = True,
+        is_saved: bool = False,
+        model_save_dir: str = "./model",
         model_type: str = "mistralai/Mistral-7B-Instruct-v0.1",
-        fine_tuned_llm_model_type: str = settings.LLM_MODEL_TYPE,
-        dataset_artifact_name: str = settings.DATASET_ARTIFACT_NAME,
-        config_file: str = settings.CONFIG_FILE,
-        model_save_dir: str = settings.MODEL_SAVE_DIR,
+        comet_artifact_name: str = "cleaned_articles",
+        config_file: str = "./training/config.yaml",
     ) -> None:
         self._prep_environment()
-        self.use_experiment_tracker = use_experiment_tracker
-        self.register_model_to_model_registry = register_model_to_model_registry
+        self.experiment = None
         self.model_save_dir = model_save_dir
         self.model_type = model_type
-        self.fine_tuned_llm_twin_model_type = fine_tuned_llm_model_type
-        self.dataset_artifact_name = dataset_artifact_name
+        self.comet_dataset_artifact = comet_artifact_name
         self.training_args_config_file = config_file
-
-    def _prep_environment(self) -> None:
-        os.environ["TOKENIZERS_PARALLELISM"] = settings.TOKENIZERS_PARALLELISM
-        th.cuda.empty_cache()
-        logger.info("Emptied cuda cache. Environment prepared successfully!")
-
-    def build(self) -> None:
-        self.nf4_config = self._init_4bit_config()
-        self.model, self.tokenizer = self.init_model(self.nf4_config)
-        tokenized_datasets = self.load_dataset()
-
-        if self.use_experiment_tracker:
+        if is_saved:
             self.experiment = Experiment(
                 api_key=settings.COMET_API_KEY,
                 project_name=settings.COMET_PROJECT,
                 workspace=settings.COMET_WORKSPACE,
             )
-        else:
-            self.experiment = None
 
-        self.model, self.qlora_config = self._initialize_qlora(self.model)
-        self.training_arguments = self._init_trainig_args()
+    def _prep_environment(self):
+        os.environ["TOKENIZERS_PARALLELISM"] = settings.TOKENIZERS_PARALLELISM
+        th.cuda.empty_cache()
+        logging.info("Emptied cuda cache. Environment prepared successfully!")
 
-        if self.experiment:
-            self.experiment.log_parameters(self.nf4_config, prefix="bitsandbytes_")
-            self.experiment.log_parameters(self.training_arguments, prefix="training_")
-            self.experiment.log_parameters(self.qlora_config, prefix="qlora_")
-
-        self.device = th.device("cuda" if th.cuda.is_available() else "cpu")
-        self.model = self.model.to(self.device)
-
-        self.trainer = Trainer(
-            model=self.model,
-            args=self.training_arguments,
-            train_dataset=tokenized_datasets["train"],
-            eval_dataset=tokenized_datasets["validation"],
-            tokenizer=self.tokenizer,
+    def init_model(self):
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_type,
+            token=settings.HUGGINGFACE_ACCESS_TOKEN,
+            device_map=th.cuda.current_device(),
+            quantization_config=self.nf4_config,
+            use_cache=False,
+            torchscript=True,
         )
-        logger.info("Initialized model trainer")
-        self.trainer.train()
-        logger.info("Finished training LLM.", model_type=self.model_type)
-        self.trainer.save_model(self.model_save_dir)
-        logger.info("Finished saving model.", model_save_dir=self.model_save_dir)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_type, token=settings.HUGGINGFACE_ACCESS_TOKEN
+        )
+        self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.tokenizer.padding_side = "right"
+        logging.info(f"Initialized model{self.model_type} successfully")
 
-        if self.experiment:
-            self.experiment.log_model("llm-twin", self.model_save_dir)
-            if self.register_model_to_model_registry:
-                self.experiment.register_model(
-                    "llm-twin",
-                    workspace=settings.COMET_WORKSPACE,
-                    registry_name="llm-twin",
-                    public=True,
-                    tags=["lora-weights", "qwak-training-pipeline"],
-                )
-
-            self.experiment.end()
-
-        self._remove_model_class_attributes()
-
-    def _init_4bit_config(self) -> BitsAndBytesConfig:
-        nf4_config = BitsAndBytesConfig(
+    def _init_4bit_config(self):
+        self.nf4_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
             bnb_4bit_compute_dtype=th.bfloat16,
         )
-
-        logger.info(
+        if self.experiment:
+            self.experiment.log_parameters(self.nf4_config)
+        logging.info(
             "Initialized config for param representation on 4bits successfully!"
         )
 
-        return nf4_config
-
-    def init_model(self, bnb_config: BitsAndBytesConfig) -> tuple:
-        model = AutoModelForCausalLM.from_pretrained(
-            self.model_type,
-            token=settings.HUGGINGFACE_ACCESS_TOKEN,
-            device_map=th.cuda.current_device(),
-            quantization_config=bnb_config,
-            use_cache=False,
-            torchscript=True,
-            cache_dir=settings.CACHE_DIR,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            self.model_type,
-            token=settings.HUGGINGFACE_ACCESS_TOKEN,
-            cache_dir=settings.CACHE_DIR,
-        )
-        tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.padding_side = "right"
-
-        logger.info("Initialized model successfully", model_type=self.model_type)
-
-        return model, tokenizer
-
-    def _initialize_qlora(self, model: PreTrainedModel) -> Tuple[PeftModel, LoraConfig]:
-        qlora_config = LoraConfig(
+    def _initialize_qlora(self, model: PreTrainedModel) -> PeftModel:
+        self.qlora_config = LoraConfig(
             lora_alpha=16, lora_dropout=0.1, r=64, bias="none", task_type="CAUSAL_LM"
         )
 
+        if self.experiment:
+            self.experiment.log_parameters(self.qlora_config)
+
         model = prepare_model_for_kbit_training(model)
-        model = get_peft_model(model, qlora_config)
+        model = get_peft_model(model, self.qlora_config)
+        logging.info("Initialized qlora config successfully!")
+        return model
 
-        logger.info("Initialized QLoRA config successfully!")
-
-        return model, qlora_config
-
-    def _init_trainig_args(self) -> TrainingArguments:
+    def _init_trainig_args(self):
         with open(self.training_args_config_file, "r") as file:
             config = yaml.safe_load(file)
-        training_arguments = TrainingArguments(**config["training_arguments"])
+        self.training_arguments = TrainingArguments(**config["training_arguments"])
+        if self.experiment:
+            self.experiment.log_parameters(self.training_arguments)
+        logging.info("Initialized training arguments successfully!")
 
-        logger.info("Initialized training arguments successfully!")
-
-        return training_arguments
-
-    def load_dataset(self) -> DatasetDict:
-        dataset_handler = DatasetClient()
-        train_data_file, validation_data_file = dataset_handler.download_dataset(
-            self.dataset_artifact_name
-        )
-        data_files = {
-            "train": str(train_data_file),
-            "validation": str(validation_data_file),
-        }
-        train_val_datasets = load_dataset("json", data_files=data_files)
-        train_dataset, val_dataset = self.preprocess_data_split(train_val_datasets)
-
-        return DatasetDict({"train": train_dataset, "validation": val_dataset})
-
-    def preprocess_data_split(self, train_val_datasets: DatasetDict) -> tuple:
-        train_data = train_val_datasets["train"]
-        val_data = train_val_datasets["validation"]
-
-        generated_train_dataset = train_data.map(self.generate_prompt)
-        generated_train_dataset = generated_train_dataset.remove_columns(
-            ["instruction", "content"]
-        )
-        generated_val_dataset = val_data.map(self.generate_prompt)
-        generated_val_dataset = generated_val_dataset.remove_columns(
-            ["instruction", "content"]
-        )
-
-        return generated_train_dataset, generated_val_dataset
-
-    def _remove_model_class_attributes(self) -> None:
-        # Remove class attributes to skip default
-        # serialization with Pickle done by Qwak
-
-        if getattr(self, "model", None):
-            del self.model
-        if getattr(self, "trainer", None):
-            del self.trainer
-        if getattr(self, "experiment", None):
-            del self.experiment
+    def _remove_model_class_attributes(self):
+        # remove needed in order to skip default serialization with Pickle done by Qwak
+        del self.model
+        del self.trainer
+        del self.experiment
 
     def generate_prompt(self, sample: dict) -> dict:
         full_prompt = f"""<s>[INST]{sample['instruction']}
         [/INST] {sample['content']}</s>"""
         result = self.tokenize(full_prompt)
-
         return result
 
     def tokenize(self, prompt: str) -> dict:
@@ -223,22 +131,65 @@ class NewsReporterMistralModel(QwakModel):
             truncation=True,
         )
         result["labels"] = result["input_ids"].copy()
-
         return result
 
-    def initialize_model(self) -> None:
-        self.model, self.tokenizer, _ = build_qlora_model(
-            pretrained_model_name_or_path=self.model_type,
-            peft_pretrained_model_name_or_path=self.fine_tuned_llm_twin_model_type,
-            bnb_config=self.nf4_config,
-            lora_config=self.qlora_config,
-            cache_dir=settings.CACHE_DIR,
+    def load_dataset(self) -> DatasetDict:
+        dataset_handler = DatasetClient()
+        train_data_file, validation_data_file = dataset_handler.download_dataset(
+            self.comet_dataset_artifact
         )
-        self.model = self.model.to(self.device)
+        data_files = {"train": train_data_file, "validation": validation_data_file}
+        raw_datasets = load_dataset("json", data_files=data_files)
+        train_dataset, val_dataset = self.preprocess_data_split(raw_datasets)
+        return DatasetDict({"train": train_dataset, "validation": val_dataset})
 
-        logger.info(
-            "Successfully loaded model from.", model_save_dir=self.model_save_dir
+    def preprocess_data_split(self, raw_datasets: DatasetDict):
+        train_data = raw_datasets["train"]
+        val_data = raw_datasets["validation"]
+        generated_train_dataset = train_data.map(self.generate_prompt)
+        generated_train_dataset = generated_train_dataset.remove_columns(
+            ["instruction", "content"]
         )
+        generated_val_dataset = val_data.map(self.generate_prompt)
+        generated_val_dataset = generated_val_dataset.remove_columns(
+            ["instruction", "content"]
+        )
+
+        return generated_train_dataset, generated_val_dataset
+    
+    def build(self):
+        self._init_4bit_config()
+        self.init_model()
+        if self.experiment:
+            self.experiment.log_parameters(self.nf4_config)
+        self.model = self._initialize_qlora(self.model)
+        self._init_trainig_args()
+        tokenized_datasets = self.load_dataset()
+        self.device = th.device("cuda" if th.cuda.is_available() else "cpu")
+        self.model = self.model.to(self.device)
+        self.trainer = Trainer(
+            model=self.model,
+            args=self.training_arguments,
+            train_dataset=tokenized_datasets["train"],
+            eval_dataset=tokenized_datasets["validation"],
+            tokenizer=self.tokenizer,
+        )
+        logging.info("Initialized model trainer")
+        self.trainer.train()
+        logging.info("Finished model finetuning!")
+        self.trainer.save_model(self.model_save_dir)
+        logging.info(f"Finished saving model to {self.model_save_dir}")
+        self.experiment.end()
+        self._remove_model_class_attributes()
+        logging.info("Finished removing model class attributes!")
+
+    def initialize_model(self):
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_save_dir,
+            token=settings.HUGGINGFACE_ACCESS_TOKEN,
+            quantization_config=self.nf4_config,
+        )
+        logging.info(f"Successfully loaded model from {self.model_save_dir}")
 
     def schema(self) -> ModelSchema:
         return ModelSchema(
@@ -247,7 +198,7 @@ class NewsReporterMistralModel(QwakModel):
         )
 
     @qwak.api(output_adapter=DefaultOutputAdapter())
-    def predict(self, df) -> pd.DataFrame:
+    def predict(self, df):
         input_text = list(df["instruction"].values)
         input_ids = self.tokenizer(
             input_text, return_tensors="pt", add_special_tokens=True
@@ -256,13 +207,11 @@ class NewsReporterMistralModel(QwakModel):
 
         generated_ids = self.model.generate(
             **input_ids,
-            max_new_tokens=500,
+            max_new_tokens=3000,
             do_sample=True,
             pad_token_id=self.tokenizer.eos_token_id,
         )
 
-        answer_start_idx = input_ids["input_ids"].shape[1]
-        generated_answer_ids = generated_ids[:, answer_start_idx:]
-        decoded_output = self.tokenizer.batch_decode(generated_answer_ids)[0]
+        decoded_output = self.tokenizer.batch_decode(generated_ids)
 
         return pd.DataFrame([{"content": decoded_output}])

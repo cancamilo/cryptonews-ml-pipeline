@@ -44,7 +44,6 @@ class NewsReporterMistralModel(QwakModel):
         config_file: str = settings.CONFIG_FILE,
         model_save_dir: str = settings.MODEL_SAVE_DIR,
     ) -> None:
-        print(f"h!!!! {settings.HUGGINGFACE_ACCESS_TOKEN}")
         self._prep_environment()
         self.use_experiment_tracker = use_experiment_tracker
         self.register_model_to_model_registry = register_model_to_model_registry

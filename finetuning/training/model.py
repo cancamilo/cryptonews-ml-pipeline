@@ -37,27 +37,34 @@ logger = logger_utils.get_logger(__name__)
 class NewsReporterMistralModel(QwakModel):
     def __init__(
         self,
-        is_saved: bool = False,
+        is_saved: bool = True,
         model_save_dir: str = "./model",
         model_type: str = "mistralai/Mistral-7B-Instruct-v0.1",
         comet_artifact_name: str = "cleaned_articles",
         config_file: str = "./training/config.yaml",
     ) -> None:
         self._prep_environment()
+        comet_ml.init(project_name="crypto-reporter")
         self.experiment = None
         self.model_save_dir = model_save_dir
         self.model_type = model_type
         self.comet_dataset_artifact = comet_artifact_name
         self.training_args_config_file = config_file
-        if is_saved:
-            self.experiment = Experiment(
-                api_key=settings.COMET_API_KEY,
-                project_name=settings.COMET_PROJECT,
-                workspace=settings.COMET_WORKSPACE,
-            )
+
+        # if is_saved:
+        self.experiment = Experiment(
+            api_key=settings.COMET_API_KEY,
+            project_name=settings.COMET_PROJECT,
+            workspace=settings.COMET_WORKSPACE,
+            auto_metric_logging=True,
+            auto_param_logging=True,
+            log_graph=True
+        )
 
     def _prep_environment(self):
         os.environ["TOKENIZERS_PARALLELISM"] = settings.TOKENIZERS_PARALLELISM
+        # 1. Enable logging of model checkpoints
+        os.environ["COMET_LOG_ASSETS"] = "True"
         th.cuda.empty_cache()
         logging.info("Emptied cuda cache. Environment prepared successfully!")
 
@@ -179,7 +186,8 @@ class NewsReporterMistralModel(QwakModel):
         logging.info("Finished model finetuning!")
         self.trainer.save_model(self.model_save_dir)
         logging.info(f"Finished saving model to {self.model_save_dir}")
-        self.experiment.end()
+        if self.experiment:
+            self.experiment.end()
         self._remove_model_class_attributes()
         logging.info("Finished removing model class attributes!")
 

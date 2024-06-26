@@ -112,6 +112,15 @@ See [this notebook for reference](/notebooks/rag_demo.ipynb)
 
 ## Training
 
+The goal of this section is to train an LLM based on the crypto currency news. In this case I will fine-tune a model to write crypto currency news reports.
+
+The training process consists of fine-tuning the [mistralai/Mistral-7B-Instruct-v0.2](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2) model available in hugging face. This model has been evaluated on several benchmarks for instruction following and it has remarkalble results compared to bigger models. 
+
+The first step to fine-tune the model is to generate a synthetic data set based on the news that we have available from the previous pipelines. The process of generating this data can be followed in [this notebook](/notebooks/dataset_preparation.ipynb)
+
+For the actual fine-tuning I am using [Qwak](https://www.qwak.com/about). This service efficiently eliminates the need to set up complex infrastructure and allows me to finetune LLMs by just writing a few lines of [code](/finetuning/training/). 
+
+For tracking my training experiments I will be using [CometML](https://www.comet.com/site/). They offer an user friendly platform for logging, monitoring, managing, optimizing and visualizing ML models.
 
 
 ## Inference 

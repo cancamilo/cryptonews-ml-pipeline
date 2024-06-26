@@ -169,3 +169,5 @@ data/**
 
 # Session data
 **/session_data/**
+
+*.json

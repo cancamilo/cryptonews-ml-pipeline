@@ -98,7 +98,17 @@ The code for this module is under the [feature_pipeline](/feature_pipeline) fold
 
 ## Retrieval Augmented Generation
 
+The RAG consists of the following steps:
 
+1. From the given initial query, extract metadata. In this case, I extract the date from the query if any and the cryptocurrency mentioned. This information will be used for filtering the search results. The extraction of metadata is achieved using OpenAI function calling.
+
+2. Given the user query, generate 5 additional queries to make the search more extensive.
+
+3. Send each of the queries generated above to  using the filters and a near text search. Merge all the resulting hits from each query, remove duplicates, order by distance and select the top 5 only.
+
+5. Prompt OpenAI to answer the user query providing the context found above.
+
+See [this notebook for reference](/notebooks/rag_demo.ipynb)
 
 ## Training
 

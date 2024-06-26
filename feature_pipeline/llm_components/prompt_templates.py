@@ -82,3 +82,19 @@ class RerankingTemplate(BaseTemplate):
     @property
     def separator(self) -> str:
         return "\n#next-document#\n"
+
+class QATemplate(BaseTemplate):
+
+    prompt: str = """You are an AI language model assistant whose job is to provide answers to cryptocurrency investors
+    in order to make informed decisions based on news. If the user query is a question, provide answers based on the given context only if it is relevant.
+    If the user query is not a question, just give a summary of the relevant content in the context related to the query. 
+    USER_QUERY:
+    ```{user_query}```
+    CONTEXT:
+    {context}"""
+
+    def create_template(self) -> BasePromptTemplate:
+        return PromptTemplate(
+            template=self.prompt,
+            input_variables=["user_query", "context"]
+        )

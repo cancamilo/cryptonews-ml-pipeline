@@ -171,3 +171,4 @@ data/**
 **/session_data/**
 
 *.json
+build_config.yaml

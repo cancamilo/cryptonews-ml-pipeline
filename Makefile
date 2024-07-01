@@ -82,3 +82,8 @@ test-daily: # Send test command on local to test  the lambda
 test-backfill: # Send test command on local to test  the lambda
 	curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" \
 	  	-d '{"mode": "backfill", "scrolls": 40}'
+
+deploy-inference:
+	qwak models deploy realtime --model-id "mistral_crypto" \
+	--instance "gpu.a10.2xl" --timeout 50000 --replicas 1 --server-workers 1
+

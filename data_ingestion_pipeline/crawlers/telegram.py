@@ -13,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 
 
 class TelegramChannelsCrawler:
-
+    name = "telegram_channels_crawler"
     date_format="%Y-%m-%d"
     dir_path = os.path.dirname(os.path.realpath(__file__))
     session_path = os.path.join(dir_path, "..", "session_data")

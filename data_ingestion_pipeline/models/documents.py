@@ -3,14 +3,17 @@ from datetime import datetime
 from dateutil import parser
 from typing import List, Optional
 
-from aws_lambda_powertools import Logger
+import logging
 from config import settings
 from db.mongodb import connection
 from errors import ImproperlyConfigured
 from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 from pymongo import errors
 
-logger = Logger(service="text-fetch-etl/crawler")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 _database = connection.get_database(settings.MONGO_DATABASE_NAME)
 
 

@@ -3,18 +3,20 @@ from datetime import datetime
 from tempfile import mkdtemp
 from selenium import webdriver
 from typing import List, Any
-from aws_lambda_powertools import Logger
+import logging
 from bs4 import BeautifulSoup
 from crawlers.base import BaseCrawler
 from models.documents import ArticleDocument
 from config import settings
 from selenium.webdriver.common.by import By
 
-
-logger = Logger(service="cryto_fetcher/crawler")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class CoinTelegraphCrawler(BaseCrawler):
+    name = "coin_telegraph_crawler"
     date_format = "%Y-%m-%d"
     url = "https://cointelegraph.com/"
 

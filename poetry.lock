@@ -1132,6 +1132,20 @@ files = [
 ]
 
 [[package]]
+name = "fire"
+version = "0.6.0"
+description = "A library for automatically generating command line interfaces."
+optional = false
+python-versions = "*"
+files = [
+    {file = "fire-0.6.0.tar.gz", hash = "sha256:54ec5b996ecdd3c0309c800324a0703d6da512241bc73b553db959d98de0aa66"},
+]
+
+[package.dependencies]
+six = "*"
+termcolor = "*"
+
+[[package]]
 name = "flatten-dict"
 version = "0.4.2"
 description = "A flexible utility for flattening and unflattening dict-like objects in Python."
@@ -6423,4 +6437,4 @@ termcolor = "2.3.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10, <3.12"
-content-hash = "3d0d7b8131f07d191e458b72a3b995acae3c4dd891b05ec196a8f2d131cb83b6"
+content-hash = "4c19f25aa83ea2b5c8740e78c6917730db2e7f4a348513a514b6dfc6ac25d3c5"

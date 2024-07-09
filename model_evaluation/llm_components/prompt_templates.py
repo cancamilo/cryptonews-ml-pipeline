@@ -85,7 +85,7 @@ class QATemplate(BaseTemplate):
             input_variables=["user_query", "context"]
         )
     
-class InferenceTemplate(BasePromptTemplate):
+class InferenceTemplate(BaseTemplate):
     simple_prompt: str = """You are an AI language model assistant. Your task is to generate a cohesive and concise response to the user question.
     Question: {question}
     """

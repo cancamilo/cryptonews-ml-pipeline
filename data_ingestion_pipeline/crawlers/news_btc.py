@@ -6,7 +6,7 @@ from typing import List, Any
 import logging
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
-from data_ingestion_pipeline.models.documents import ArticleDocument
+from models.documents import ArticleDocument
 from datetime import datetime, timedelta
 from crawlers.base import BaseCrawler
 from models.documents import ArticleDocument
@@ -99,7 +99,7 @@ class NewsBTCCrawler(BaseCrawler):
         text = " ".join(extracted_text)
 
         # Print the extracted text
-        return ArticleDocument(source="newsbtc", title=title, content=text, date=date)
+        return ArticleDocument(source="newsbtc", title=title, content=text, published_at=date)
 
     def extract(
         self,
@@ -127,14 +127,19 @@ class NewsBTCCrawler(BaseCrawler):
         article_elements = parent.find_elements(By.TAG_NAME, 'article')
         links = [article.find_element(By.TAG_NAME, 'a').get_attribute('href') for article in article_elements]
 
+        # TODO: extract the date from the article_elements and filter before visiting the links.
+
         # Visit each link saved before
         articles = []
         for link in links:
-            text = self.extract_article(link)
-            articles.append(text)
-            time.sleep(2)  # Adjust the sleep time as needed to allow the page to load
+            article = self.extract_article(link)
+            articles.append(article)
+            time.sleep(1.5)  # Adjust the sleep time as needed to allow the page to load
 
         self.driver.close()
+        return articles
+
+
 
     def date_filter(self, date, lower: str, upper: str):
         dt = datetime.strptime(date, self.date_format)
